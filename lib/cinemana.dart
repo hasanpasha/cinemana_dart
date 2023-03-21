@@ -15,7 +15,29 @@ class CinemanaClient {
   final NetworkService networkService;
   Token? _token;
 
-  bool get isLogged => (_token != null);
+  // bool get tokenNull => _isTokenNull;
+  bool get _isTokenNull => _token == null;
+  String getRefreshToken() => _token!.refreshToken;
+
+  Future<bool> isLogged() async =>
+      _isTokenNull ? false : (_token!.isValid ? true : await tryRefreshToken());
+
+  Future<bool> tryRefreshToken() async {
+    final result = await loginWithRefreshToken(getRefreshToken());
+    final completer = Completer<bool>();
+    result.when((success) => completer.complete(true),
+        (error) => completer.complete(false));
+    return completer.future;
+  }
+
+  Future<Result<bool, Exception>> loginWithRefreshToken(token) async {
+    final result = await _getToken(TokenGrantRefresh(refreshToken: token));
+    if (result.isError()) {
+      return Error(result.tryGetError()!);
+    }
+    _token = result.tryGetSuccess()!;
+    return Success(!_isTokenNull);
+  }
 
   Future<Result<bool, Exception>> loginWithPassword(userName, password) async {
     final result = await _getToken(
@@ -25,12 +47,12 @@ class CinemanaClient {
     }
 
     _token = result.tryGetSuccess()!;
-    return Success(isLogged);
+    return Success(_isTokenNull);
   }
 
   Future<Result<UserInfo, Exception>> getUserInfo() async {
-    if (!isLogged) {
-      return Error(Exception("User is not logged!"));
+    if (_isTokenNull) {
+      return Error(NotLogged());
     }
 
     UserInfo userInfo;
@@ -53,11 +75,7 @@ class CinemanaClient {
 
     userInfo = UserInfo.fromJson(json);
 
-    if (!userInfo.isNull) {
-      return Success(userInfo);
-    } else {
-      return Error(NullValue("user info is null"));
-    }
+    return Success(userInfo);
   }
 
   Future<Result<Token, Exception>> _getToken<T extends TokenGrant>(T t) async {
@@ -80,10 +98,10 @@ class CinemanaClient {
     }
     if (resp.statusCode == HttpStatus.ok) {
       token = Token.fromJson(json);
-      if (token.isNull) {
-        return Error(NullValue("The object can't be used as it is, "
-            "because one of it's neccessary field is null."));
-      }
+      // if (token.isNull) {
+      //   return Error(NullValue("The object can't be used as it is, "
+      //       "because one of it's neccessary field is null."));
+      // }
       return Success(token);
     } else {
       if (resp.statusCode != HttpStatus.badRequest) {

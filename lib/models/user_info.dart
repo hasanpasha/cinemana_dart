@@ -20,7 +20,7 @@ class UserInfoGet {
 enum Gender { male, female }
 
 class UserInfo {
-  final String? sub;
+  final String sub;
   final String name;
   final String preferredUsername;
   final String? firstName;
@@ -28,8 +28,6 @@ class UserInfo {
   final Gender? gender;
   final DateTime? dateOfBirth;
   final String? mobileNo;
-
-  bool get isNull => (sub == null);
 
   @override
   String toString() =>

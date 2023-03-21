@@ -6,6 +6,14 @@ class UnknowError implements Exception {
   String toString() => "UnknowErrorException: $msg";
 }
 
+class NotLogged implements Exception {
+  final String? msg;
+  const NotLogged([this.msg]);
+
+  @override
+  String toString() => "NotLoggedException: $msg";
+}
+
 class WrongLoginInfo implements Exception {
   final String msg;
   const WrongLoginInfo(this.msg);

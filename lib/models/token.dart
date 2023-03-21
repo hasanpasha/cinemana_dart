@@ -37,22 +37,41 @@ class TokenGrantPassword extends TokenGrant with TokenScope {
       };
 }
 
+class TokenGrantRefresh extends TokenGrant with TokenScope {
+  @override
+  String grantType = "refresh_token";
+
+  final String refreshToken;
+
+  TokenGrantRefresh({required this.refreshToken});
+
+  @override
+  Map<String, String> get headers => {
+        HttpHeaders.authorizationHeader: Website.basicAuth,
+      };
+
+  @override
+  Map<String, String> get body => {
+        "grant_type": grantType,
+        "scope": scope,
+        "refresh_token": refreshToken,
+      };
+}
+
 class Token {
   final String? idToken;
-  final String? accessToken;
-  final String? refreshToken;
-  final DateTime? expiresIn;
-  final String? type;
+  final String accessToken;
+  final String refreshToken;
+  final DateTime expiresIn;
+  final String type;
 
   Token.fromJson(Map json)
       : idToken = json["id_token"],
         accessToken = json["access_token"],
         refreshToken = json["refresh_token"],
-        expiresIn = (json["expires_in"] == null)
-            ? null
-            : DateTime.now().add(Duration(seconds: json["expires_in"])),
+        expiresIn = DateTime.now().add(Duration(seconds: json["expires_in"])),
         type = json["token_type"];
 
-  bool get isNull =>
-      (accessToken == null || expiresIn == null || refreshToken == null);
+  bool get isValid =>
+      DateTime.now().difference(expiresIn) > Duration(minutes: 5);
 }
